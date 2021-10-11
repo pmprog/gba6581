@@ -17,6 +17,7 @@ TARGET   := gbasid
 # All of the source files used by your project
 SOURCES  := \
 	    src/main.c \
+		src/audio.c \
 		sid-the-kid/arm_mos6581.s
 
 # The include directories used by your project
