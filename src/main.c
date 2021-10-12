@@ -22,16 +22,27 @@ int main(void)
     REG_DISPCNT  = LCD_MODE_3 | LCD_BG2_ENABLE;
 
     init_audio();
-    //mos6581_reset();
+    mos6581_reset();
 
-    timerSet(0, 128, TIMER_ENABLE);
-    timerSet(1, 1, TIMER_FREQ_64KHZ | TIMER_IRQ_ENABLE | TIMER_ENABLE);
+/*
+    // From C64 example program poking the MOS6581
+    u32 sidaddress = MOS6581_REGISTER_BASE;
+    for(int addr = 0; addr <= 24; addr++ )
+    {
+        mos6581_write(sidaddress + addr, 0);
+    }
+    mos6581_write(sidaddress + 1, 130);
+    mos6581_write(sidaddress + 5, 9);
+    mos6581_write(sidaddress + 15, 30);
+    mos6581_write(sidaddress + 24, 15);
+*/  
 
-    int sdjcik = 0;
+    timerSet(0, 65536 - 512, TIMER_ENABLE);
+    timerSet(1, 1, TIMER_FREQ_262KHZ | TIMER_IRQ_ENABLE | TIMER_ENABLE);
+
     while (1)
     {
-        //mos6581_write(0, xpos);
-        MODE3_FRAME[ypos][xpos] = RGB5(0, 31,  0);
+        MODE3_FRAME[ypos][xpos] = RGB5(24, 18, 0);
         svcVBlankIntrWait();
     }
 }
@@ -42,15 +53,9 @@ void vblank_irq()
 
 void timer0_irq()
 {
-    //mos6581_run(SID_BUFFER_SIZE >> 1, (int8_t*)&sid_buffer);
+    mos6581_run(SID_BUFFER_SIZE, (int8_t*)&sid_buffer);
 
-    REG_DMA2CNT = 0;
-    REG_DMA2SRC = &main; // &sid_buffer[0];
-    REG_DMA2DST = &REG_FIFO_A;
-    REG_DMA2LEN = SID_BUFFER_SIZE;
-    REG_DMA2CNT = DMA_DST_FIXED | DMA_SRC_INCREMENT | DMA_REPEAT | DMA_32BIT | DMA_START_SOUND | DMA_ENABLE;
-
-    //REG_FIFO_A = 0x64736473;
+    dmaSoundFifoATransfer((void*)&sid_buffer[0], DMA_ENABLE);
 
     xpos = (xpos+1) % 240;
     if(xpos == 0) { ypos = (ypos+1) % 160; }
